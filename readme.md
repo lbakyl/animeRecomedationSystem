@@ -38,7 +38,7 @@
 ## 🏗️ Architecture
 
 ### Technology Stack
-- **Backend**: Spring Boot 3.5.7, Spring Security, Spring Data JPA, hibernate
+- **Backend**: Spring Boot 3.5.13, Spring Security, Spring Data JPA, hibernate
 - **Database**: MariaDB 11.8 in production, MySQL for local development (both in Docker)
 - **Frontend**: Thymeleaf, Bootstrap 5.3, Material Kit, Tabler Icons, HTMX
 - **Build Tool**: Maven

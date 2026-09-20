@@ -107,8 +107,23 @@ Found while running the application in production behind nginx and Cloudflare on
 
 ### Changed
 
-- `readme.md`: versions (Spring Boot 3.5.7, Java 25), MariaDB in production, the endpoints and the deployment
+- `readme.md`: versions (Spring Boot 3.5.13, Java 25), MariaDB in production, the endpoints and the deployment
   section (the referenced `docker-compose.prod.yml` never existed).
+
+### How the clean-up was verified
+
+- 43 unit tests pass, including `ProductionConfigTest`.
+- The commit was built with `-Pprod,container-build-base` and started as a staging container **without** any
+  extra environment variable, against a copy of the production database:
+  - with the headers of the reverse proxy (`Host`, `X-Forwarded-Proto: https`) the redirect after a search is
+    `https://...`;
+  - the session cookie is `Secure; HttpOnly; SameSite=Lax`;
+  - the container log at default level is about 17 readable lines (no Hikari `DEBUG`, no step timings, no
+    `WARN`), and `LOGGING_LEVEL_CZ_KOCABEK_ANIMERECOMEDATIONSYSTEM=DEBUG` brings the step timings back;
+  - all search flows of the first section still behave the same.
+- `compose.prod.yaml` passes `docker compose config`.
+- Note: this branch is based on `last-version`, which already uses Spring Boot 3.5.13. An installation that was
+  built from older code (3.5.7) is upgraded to it when it deploys this branch.
 
 ## Known issues that were not touched
 
