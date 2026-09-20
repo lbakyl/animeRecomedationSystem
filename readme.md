@@ -24,6 +24,7 @@
 ### Core Functionality
 - **Intelligent Recommendation Engine**: Uses collaborative filtering to suggest anime based on user similarity patterns
 - **Advanced Filtering**: Filter by genre, minimum rating, user count, and content preferences
+- **Smart title search**: type-ahead suggestions, matching that ignores case, accents and punctuation (Japanese and English titles), and a pick-list when several anime match
 - **User Authentication**: Secure registration and login system with BCrypt password encryption
 - **Personalized Experience**: Save search preferences and maintain user profiles
 - **Responsive Design**: Modern UI built with Bootstrap and Material Kit
@@ -37,8 +38,8 @@
 ## 🏗️ Architecture
 
 ### Technology Stack
-- **Backend**: Spring Boot 3.5.3, Spring Security, Spring Data JPA, hibernate
-- **Database**: MySQL 8.0 (containerized with Docker)
+- **Backend**: Spring Boot 3.5.7, Spring Security, Spring Data JPA, hibernate
+- **Database**: MariaDB 11.8 in production, MySQL for local development (both in Docker)
 - **Frontend**: Thymeleaf, Bootstrap 5.3, Material Kit, Tabler Icons, HTMX
 - **Build Tool**: Maven
 - **Testing**: JUnit 5
@@ -73,7 +74,7 @@ src/
 ## 🛠️ Setup & Installation
 
 ### Prerequisites
-- Java 24
+- Java 25
 - Docker & Docker Compose
 - Maven 3.6+
 
@@ -100,16 +101,16 @@ src/
    - Register a new account or continue as guest
 
 ### Database Setup
-The application uses a containerized MySQL database with anime data from Kaggle datasets:
+The application uses a containerized database (MySQL locally, MariaDB 11.8 in production) with anime data from Kaggle datasets:
 
 - **Users**: MyAnimeList user data with viewing statistics
 - **Anime**: Comprehensive anime database with genres, ratings, and metadata  
 - **UserRatings**: User-anime rating relationships for collaborative filtering
 
 ### Configuration
-Key configuration options in `application.properties`:
+Key configuration options in `application-<profile>.yml` (`dev`, `local`, `prod`):
 
-- Database connection: `spring.datasource.url=jdbc:mysql://localhost:3306/mydatabase`
+- Database connection: `DB_URL` and `DB_USERNAME`; the password is read from `/run/secrets/DB_PASSWORD` in production
 - Security settings: Password encoding, session management
 - JPA settings: SQL logging, hibernate configuration
 
@@ -157,6 +158,9 @@ Key configuration options in `application.properties`:
 - `GET /register` - User registration
 - `GET /main` - Home page (guest access)
 - `POST /submit` - Search form submission
+- `GET /search/suggest?animeName=...` - Type-ahead suggestions (HTML fragment loaded by htmx)
+- `POST /result/submit` - Search form submission from the result page
+- `GET /anime/{id}` - Anime detail page
 - `GET /result` - Recommendation results page
 
 ### Protected Endpoints  
@@ -185,7 +189,7 @@ public static final int FINAL_ANIME_LIST_SIZE = 50;  // Results to return
 
 
 ## 🧪 Testing
-- under development
+- The unit tests need no database; only `AnimeRecommendationAppTests` starts the whole application. Three older tests currently fail, see `CHANGELOG.md`.
 Run the test suite:
 ```bash
 ./mvnw test
@@ -207,8 +211,8 @@ docker-compose up -d  # Database only
 # Build the application
 ./mvnw clean package
 
-# Run with Docker
-docker-compose -f docker-compose.prod.yml up -d
+# Or run MariaDB and the application in Docker, see docs/deployment.md
+docker compose -f compose.prod.yaml up -d --build
 ```
 
 ## 📈 Performance Metrics
@@ -223,7 +227,7 @@ docker-compose -f docker-compose.prod.yml up -d
 - **CSRF Protection**: Spring Security CSRF tokens
 - **Input Validation**: Bean Validation with custom constraints
 - **SQL Injection Prevention**: JPA/Hibernate parameterized queries
-- **Authentication**: Session-based with secure cookie handling
+- **Authentication**: Session-based; in the production profile the session cookie is `Secure`, `HttpOnly` and `SameSite=Lax`
 
 ## 🎨 UI/UX Features
 

@@ -68,13 +68,13 @@ public class RecommendationService {
         long step1Start = System.nanoTime();
         final var usersAnimeLists = userAnimeScoreService.getUsersAnimeLists();
         long step1Duration = (System.nanoTime() - step1Start) / 1_000_000;
-        logger.warn("Step 1 (collect users data) took: {} ms", step1Duration);
+        logger.debug("Step 1 (collect users data) took: {} ms", step1Duration);
         logger.info("size of data after grouping: {}", usersAnimeLists.size());
 
         long step2Start = System.nanoTime();
         final var animeMap = engine.buildAnimeMap(usersAnimeLists);
         long step2Duration = (System.nanoTime() - step2Start) / 1_000_000;
-        logger.warn("Step 2 (build anime occurrences map) took: {} ms", step2Duration);
+        logger.debug("Step 2 (build anime occurrences map) took: {} ms", step2Duration);
         logger.debug("number of anime in map: {}", animeMap.size());
         final var mapWithDetails = enrichedMapByDetails(animeMap);
         final var processedMap = engine.filteredAndSortAnimeMap(usersAnimeLists, mapWithDetails);
@@ -82,14 +82,14 @@ public class RecommendationService {
         final var weightedAnime = engine.weightAnime(processedMap, AnimeScoreCalculator.compositeScoring);
         final var topRecommendations = engine.cutTheTopN(weightedAnime);//current final anime map with ids without detail yet
         long step3Duration = (System.nanoTime() - step3Start) / 1_000_000;
-        logger.warn("Step 3 (weighted anime's) took: {} ms", step3Duration);
+        logger.debug("Step 3 (weighted anime's) took: {} ms", step3Duration);
         logger.debug("size of shortened list: {}", topRecommendations.size());
         long step4Start = System.nanoTime();
         //get anime details separately
         final var animesInfo = getAnimeInfos(topRecommendations);
 
         long step4Duration = (System.nanoTime() - step4Start) / 1_000_000;
-        logger.warn("Step 4 (get anime details) took: {} ms", step4Duration);
+        logger.debug("Step 4 (get anime details) took: {} ms", step4Duration);
         logger.debug("recommended anime's: {}", animesInfo.size());
         return buildOutputList(animesInfo, topRecommendations);
     }

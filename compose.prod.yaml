@@ -1,0 +1,104 @@
+# Production stack: MariaDB + the application behind a reverse proxy (see docs/deployment.md).
+#
+#   docker compose -f compose.prod.yaml up -d --build
+#
+# Required next to this file:
+#   .env                       DB_NAME, DB_USERNAME, DB_URL   (no passwords, see docs/deployment.md)
+#   secrets/db_pass.txt        password of the application's database user
+#   secrets/db_root_pass.txt   MariaDB root password
+# Both are git-ignored. Neither the database nor the application is published on a public interface.
+
+services:
+  db:
+    image: mariadb:11.8
+    container_name: anime_db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_pass
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USERNAME}
+      MARIADB_PASSWORD_FILE: /run/secrets/db_pass
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_uca1400_ai_ci
+      # about half of the RAM that is left for the database
+      - --innodb-buffer-pool-size=2G
+      - --innodb-log-file-size=512M
+      - --max-allowed-packet=256M
+      - --max-connections=50
+      - --skip-name-resolve
+      # keep the cache warm across restarts: write ALL cached pages on shutdown, reload them on start
+      - --innodb-buffer-pool-dump-at-shutdown=ON
+      - --innodb-buffer-pool-load-at-startup=ON
+      - --innodb-buffer-pool-dump-pct=100
+    # a normal shutdown flushes the buffer pool and writes the dump; Docker's default of 10 s may kill it
+    stop_grace_period: 120s
+    volumes:
+      - database:/var/lib/mysql
+    secrets:
+      - db_root_pass
+      - db_pass
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - anime-network
+
+  anime-recommend-app:
+    image: anime-recommend-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_PROFILE: prod # MariaDB driver, see the profiles in pom.xml
+    container_name: anime_Recommendation_App
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_HIKARI_KEEPALIVE_TIME=60000
+      - DB_URL=${DB_URL}
+      - DB_NAME=${DB_NAME}
+      - DB_USERNAME=${DB_USERNAME}
+      - "JAVA_OPTS=-Xms512m -Xmx1024m"
+    secrets:
+      # mounted as /run/secrets/DB_PASSWORD and read through spring.config.import=configtree:/run/secrets/
+      - source: db_pass
+        target: DB_PASSWORD
+    ports:
+      # only the reverse proxy on the same host may reach the application
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/actuator/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - anime-network
+
+volumes:
+  database:
+
+networks:
+  anime-network:
+    driver: bridge
+
+secrets:
+  db_pass:
+    file: ./secrets/db_pass.txt
+  db_root_pass:
+    file: ./secrets/db_root_pass.txt

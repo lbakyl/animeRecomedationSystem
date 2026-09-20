@@ -7,7 +7,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Base: `last-version` (11 Aug 2026).
 
-### Why
+This branch contains two groups of changes: the **search improvement** (first section, most of the text
+below) and **production clean-up** found while moving the application to a new server (last section).
+
+### Why (search)
 
 Searching for an anime required the **complete title, typed exactly**: the app ran
 `where name = ?` and then `where englishName = ?`. Anything else ("Cowboy", "Your Name" for the stored
@@ -74,12 +77,46 @@ what to try instead.
 - The type-ahead, click-to-search and the pick-list were driven in a real browser.
   (Submitting with the Enter key was not covered by the browser automation, only the Search button.)
 
-### Known issues that were not touched
+## Production clean-up
+
+Found while running the application in production behind nginx and Cloudflare on a new server.
+
+### Fixed
+
+- **Redirect to `http://` after a search.** The application ignored the `X-Forwarded-Proto: https` header of
+  the reverse proxy, so the redirect after `POST /submit` pointed to `http://...` and browsers showed
+  "This site doesn't support a secure connection". `application-prod.yml` now sets
+  `server.forward-headers-strategy: framework`.
+- **Session cookie** is now `Secure` and `SameSite=Lax` in the production profile (`HttpOnly` was already the
+  default). `SESSION_COOKIE_SECURE=false` switches `Secure` off to try the prod profile over plain http locally.
+- **Noisy production log.** `logging.level.com.zaxxer.hikari: DEBUG` in `application-prod.yml` printed the
+  connection pool housekeeping every 30 seconds, and the timing of every recommendation step was logged as
+  `WARN`, which made healthy requests look like problems. Hikari is back to the default level and the step
+  timings (`UserAnimeScoreService`, `RecommendationService`) are `DEBUG`; use
+  `LOGGING_LEVEL_CZ_KOCABEK_ANIMERECOMEDATIONSYSTEM=DEBUG` to see them again.
+
+### Added
+
+- `compose.prod.yaml`: MariaDB 11.8 and the application, ports not published publicly, secrets from files.
+  The database keeps its cache across restarts: MariaDB already saved a quarter of the buffer pool on shutdown
+  (`innodb_buffer_pool_dump_pct=25`) and Docker gave it 10 s to stop; now the whole pool is saved and the
+  shutdown may take up to 120 s. This should keep the first search after a database restart fast.
+- `docs/deployment.md`: production guide (configuration, data load, nginx with TLS, rate limits and a restricted
+  actuator, Cloudflare notes, update and rollback, backup).
+- `ProductionConfigTest` keeps the settings above from being lost again.
+
+### Changed
+
+- `readme.md`: versions (Spring Boot 3.5.7, Java 25), MariaDB in production, the endpoints and the deployment
+  section (the referenced `docker-compose.prod.yml` never existed).
+
+## Known issues that were not touched
 
 These tests fail on the unmodified `last-version` as well and are unrelated to this branch:
 
-- `AnimeScoreTest.perfectScore` expects `1.0` but gets `1.4`. `ConfigConstant.OCCURRENCE_WEIGHT` (0.7) and
-  `SCORE_WEIGHT` (0.7) add up to 1.4, not to 1.
+- `AnimeScoreTest.perfectScore` expects a score of `1.0` but gets `1.4`. `ConfigConstant.OCCURRENCE_WEIGHT`
+  (0.7) and `SCORE_WEIGHT` (0.7) add up to 1.4; the README documents these weights, so most likely the
+  test is outdated. Either the test or the weights need a decision by the author.
 - `RecommendationEngineTest.buildAnimeOccurrencesMap` (order of the result) and
   `RecommendationEngineTest.weightAnime` (`NullPointerException`, `getAverageRating()` is `null`).
 - `AnimeRecommendationAppTests.contextLoads` starts the whole application and was not run for this branch

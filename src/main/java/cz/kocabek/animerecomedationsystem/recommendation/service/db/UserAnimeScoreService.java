@@ -29,13 +29,13 @@ public class UserAnimeScoreService {
         long step1_1Start = System.nanoTime();
         final var usersId = cacheableAnimeDataProvider.getUsersIdWhoRatedGivenAnime(cacheKey);
         long step1_1Duration = (System.nanoTime() - step1_1Start) / 1_000_000;
-        logger.warn("Step 1.1 (collect users with detail) took: {} ms", step1_1Duration);
+        logger.debug("Step 1.1 (collect users with detail) took: {} ms", step1_1Duration);
         logger.info("Users with detail after service: {}", usersId.size());
 
         long step1_2Start = System.nanoTime();
         final var userRatingsData = cacheableAnimeDataProvider.fetchRatedAnimeByUsers(usersId, cacheKey);
         long step1_2Duration = (System.nanoTime() - step1_2Start) / 1_000_000;
-        logger.warn("Step 1.2 (fetch user ratings) took: {} ms", step1_2Duration);
+        logger.debug("Step 1.2 (fetch user ratings) took: {} ms", step1_2Duration);
         return groupUserByID(userRatingsData);
     }
 

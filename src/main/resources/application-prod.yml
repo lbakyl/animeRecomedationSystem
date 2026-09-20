@@ -44,9 +44,6 @@ logging:
         web: WARN
         security: WARN
       hibernate: WARN
-    com:
-      zaxxer:
-        hikari: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
@@ -80,6 +77,17 @@ server:
   http2:
     enabled: true
   shutdown: graceful
+  # The app runs behind a reverse proxy (nginx, Cloudflare) that terminates TLS. Honour X-Forwarded-Proto/Host
+  # so that redirects and absolute URLs use https instead of the plain http the app sees.
+  # Only correct while port 8080 is reachable through the proxy alone (bind it to 127.0.0.1).
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        # The session cookie is only sent over https. SESSION_COOKIE_SECURE=false allows the prod profile
+        # to be tried over plain http (e.g. on localhost); never do that on a public server.
+        secure: ${SESSION_COOKIE_SECURE:true}
+        same-site: lax
 
 spring.lifecycle:
   timeout-per-shutdown-phase: 30s
