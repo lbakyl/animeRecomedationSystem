@@ -71,9 +71,22 @@
                             <div class="form-group mb-0 position-relative">
                                 <label for="animeName" class="form-label text-white visually-hidden">Search
                                     again:</label>
-                                <input type="text" id="animeName" th:field="*{animeName}"
+                                <input type="text" id="animeName" th:field="*{animeName}" autocomplete="off"
+                                    th:attr="hx-get=@{/search/suggest}" hx-trigger="input changed delay:250ms"
+                                    hx-target="#animeSuggestions" hx-swap="innerHTML" hx-sync="this:replace"
                                     class="form-control bg-light text-white border-0 shadow-sm ps-4 py-3 rounded-pill"
                                     placeholder="Search for a different anime..." aria-describedby="animeNameError" />
+                                <!-- id of a title picked from the suggestions, cleared as soon as the text is edited -->
+                                <input type="hidden" th:field="*{animeId}" />
+                                <!-- type-ahead dropdown, also used for the pick-list of an ambiguous / unknown title -->
+                                <div id="animeSuggestions" class="position-absolute top-100 start-0 w-100"
+                                    style="z-index: 20;" aria-live="polite">
+                                    <th:block th:if="${candidates != null}">
+                                        <th:block
+                                            th:replace="~{fragments/suggestions :: list(${candidates}, ${searchNotice})}">
+                                        </th:block>
+                                    </th:block>
+                                </div>
                             </div>
                         </div>
                         <div class="col-auto">
@@ -85,6 +98,12 @@
                             class="bg-danger text-white small p-1 mt-1 text-center rounded position-absolute top-100 start-0 w-100"
                             style="z-index: 10;">
                             <span th:errors="*{animeName}"></span>
+                        </div>
+                        <!-- e.g. the requested result page does not exist -->
+                        <div th:if="${searchError}"
+                            class="bg-danger text-white small p-1 mt-1 text-center rounded position-absolute top-100 start-0 w-100"
+                            style="z-index: 10;">
+                            <span th:text="${searchError}"></span>
                         </div>
                         <div th:if="${#fields.hasAnyErrors()}">
                             <ul>

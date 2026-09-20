@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+    <!-- nothing to show (query too short) -->
+    <th:block th:fragment="none"></th:block>
+
+    <!-- entry point of the type-ahead endpoint: a view name may not carry fragment parameters, so it reads the model -->
+    <th:block th:fragment="suggestions">
+        <th:block th:replace="~{fragments/suggestions :: list(${items}, ${notice})}"></th:block>
+    </th:block>
+
+    <!-- type-ahead dropdown and the pick-list of an ambiguous / unknown title -->
+    <div th:fragment="list(items, notice)" class="list-group shadow text-start mt-1">
+        <div th:if="${notice}" class="list-group-item small bg-warning-subtle text-dark" th:text="${notice}"></div>
+        <button th:each="s : ${items}" type="button" role="option"
+            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-dark"
+            th:attr="data-anime-id=${s.id},data-name=${s.name}">
+            <span th:text="${s.label()}"></span>
+            <span th:if="${s.type}" class="badge bg-secondary ms-2" th:text="${s.type}"></span>
+        </button>
+    </div>
+</body>
+
+</html>

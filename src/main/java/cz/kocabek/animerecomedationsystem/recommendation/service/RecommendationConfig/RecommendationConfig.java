@@ -17,7 +17,7 @@ public class RecommendationConfig {
     private int minScore = ConfigConstant.MIN_INPUT_SCORE;
     private int maxUsers = ConfigConstant.MAX_USERS_PER_PAGE;
     private boolean onlyInAnimeGenres = false;
-    private InputDTO configForm = new InputDTO(this.animeName, this.minScore, this.maxUsers, this.onlyInAnimeGenres);
+    private InputDTO configForm = new InputDTO(this.animeName, this.minScore, this.maxUsers, this.onlyInAnimeGenres, null);
 
     public void updateConfig(InputDTO formData) {
         this.configForm = formData;
@@ -28,7 +28,7 @@ public class RecommendationConfig {
     }
 
     public void resetConfigForm() {
-        this.configForm = new InputDTO(null, ConfigConstant.MIN_INPUT_SCORE, ConfigConstant.MAX_USERS_PER_PAGE, false);
+        this.configForm = new InputDTO(null, ConfigConstant.MIN_INPUT_SCORE, ConfigConstant.MAX_USERS_PER_PAGE, false, null);
     }
 
     public ConfigCacheKey createCacheKey() {

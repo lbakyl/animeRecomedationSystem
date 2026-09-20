@@ -16,18 +16,12 @@ public interface AnimeRepository extends JpaRepository<Anime, Long> {
 
     Iterable<Anime> findTop5ByGenres_GenreName(@NonNull String genreName);
 
-    @Query("select a.id from Anime a where  a.name = ?1")
-    Optional<Long> getAnimeIdByName(@NonNull String name);
-
     @Query("""
             select new cz.kocabek.animerecomedationsystem.recommendation.dto.AnimeDto(a.id,a.name,a.score,a.imageURL)
                         from Anime a
                         where a.id  in :animeIds
                         order by a.score DESC""")
     List<AnimeDto> getAnimeInfoListOrderByScore(@Param("animeIds") @NonNull Collection<Long> animeIds);
-
-    @Query("select a.id from Anime a where a.englishName =?1")
-    Optional<Long> getAnimeIdByEnglishName(String englishName);
 
     @Query("select a.name from Anime a where a.id in :animeIds")
     Collection<String> getAnimeNamesByIds(Collection<Long> animeIds);
