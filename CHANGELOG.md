@@ -112,6 +112,17 @@ Found while running the application in production behind nginx and Cloudflare on
   with a content hash (`main-<hash>.css`; links written with `@{...}` and the `url(...)` references inside the
   CSS are rewritten automatically), so a changed file gets a new URL and is never served stale. HTML pages keep
   `no-store`. Old unhashed URLs still work.
+- **Generic "Whitelabel Error Page".** Every error (403, 400, 404, 500) showed Spring Boot's fallback page ("This
+  application has no explicit mapping for /error..."). A common way to get it: keep a page open until the session
+  is gone, then reload it. The browser re-sends the form, the CSRF token no longer matches and the answer is a
+  403. `templates/error.html` now replaces it for every error, in the look of the other pages (photo band, card,
+  button back to the search): "Your session has expired" for 403, "We could not find that page" for 404, "That
+  link does not look right" for 400 and "Something went wrong on our side" for everything else. The page needs no
+  session, CSRF token or search form, does not echo the requested path, and the HTTP status is unchanged. API
+  clients that ask for JSON still get JSON.
+- **Unknown anime page was a 500.** `/anime/{id}` with an id that does not exist threw an
+  `IllegalArgumentException`, which answered 500 and wrote an `ERROR` with a stack trace to the log for a
+  harmless typo or a bot. It is a 404 now (`ResponseStatusException`).
 
 ### Added
 
@@ -137,7 +148,7 @@ Found while running the application in production behind nginx and Cloudflare on
 
 ### How the clean-up was verified
 
-- 49 unit tests pass, including `ProductionConfigTest` and `TemplatesAndAssetsTest`.
+- 51 unit tests pass, including `ProductionConfigTest` and `TemplatesAndAssetsTest`.
 - The commit was built with `-Pprod,container-build-base` and started as a staging container **without** any
   extra environment variable, against a copy of the production database:
   - with the headers of the reverse proxy (`Host`, `X-Forwarded-Proto: https`) the redirect after a search is
@@ -159,6 +170,10 @@ Found while running the application in production behind nginx and Cloudflare on
   with the menu and its dropdown open, the title and the hamburger stay in the first row, the menu is a
   full-width card below. At 992 px and 1280 px the positions and sizes of the title and the menu are identical to
   the previous version.
+- Error page on the staging container, each error triggered as a browser would (`Accept: text/html`): a form sent
+  without a valid CSRF token -> 403 "Your session has expired"; unknown anime -> 404; bad id -> 400; missing file
+  -> 404; direct `/error` -> generic message without an error number. The pages were viewed in a browser at
+  desktop and 375 px width (no overflow). The log for the unknown anime has no `ERROR` and no stack trace.
 - The Thymeleaf warning only appears when the watchlist page is rendered for a logged-in user, which was not
   reproduced on staging (no test account). Instead the pattern used by `TemplatesAndAssetsTest` was checked to
   flag the old `watchlist.html` (the exact expression from the production log) and to pass the fixed one.
