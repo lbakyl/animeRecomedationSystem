@@ -13,14 +13,15 @@ like. All times are CEST (UTC+2) as in `git log`, deployment times are given in 
 
 | Version | Released (live site) | Commits | What it is |
 |---|---|---|---|
-| [0.4.0](#040) | 2026-09-21 23:01 CEST (21:01 UTC) | 1 | Signing in is optional: the site opens in the app, menu has Sign In / Sign Up |
+| [0.5.0](#050) | 2026-09-21 23:15 CEST (21:15 UTC) | 1 | Recommendation cards: aligned AVG/MAL badges, wider meter, equal poster height |
+| [0.4.0](#040) | 2026-09-21 23:01 CEST (21:01 UTC) | 2 | Signing in is optional: the site opens in the app, menu has Sign In / Sign Up; release history |
 | [0.3.1](#031) | 2026-09-21 22:47 CEST (20:47 UTC) | 2 | Dark text in the search box |
 | [0.3.0](#030) | 2026-09-21 22:03 CEST (20:03 UTC) | 3 | Custom error page, unknown anime is a 404 |
 | [0.2.0](#020) | 2026-09-21 17:55 CEST (15:55 UTC) | 4 | Favicon, static file caching, mobile menu fix, Thymeleaf warning |
 | [0.1.0](#010) | 2026-09-21 00:07 CEST (2026-09-20 22:07 UTC) | 3 | Search rewrite and production clean-up |
 
-13 commits, 42 files changed (22 new, 20 modified, none deleted), +2046 / -60 lines, of which +787 / -49 in
-`src/main` and +791 in `src/test` (8 new test classes, 59 tests). The rest is documentation.
+15 commits (as of `46150f2`), 43 files changed (22 new, 21 modified, none deleted), +2179 / -66 lines, of which
++830 / -55 in `src/main` and +808 in `src/test` (8 new test classes, 60 tests). The rest is documentation.
 
 ## For the call: what to look at
 
@@ -43,12 +44,14 @@ like. All times are CEST (UTC+2) as in `git log`, deployment times are given in 
 - **Templates / CSS:** `fragments/header.html` (search box attributes, new hook classes, hidden `animeId`),
   `fragments/core.html` (favicon links, one more script), `fragments/menuContent.html` (guest menu),
   `main.html`/`detail.html` (htmx script), `watchlist.html` (one attribute), `auth/registration.html` (one link),
-  `main.css` (one media-query block), new `error.html` and `fragments/suggestions.html`.
+  `main.css` (a media-query block for the header, rules for the recommendation cards), `result.html` (the meter's
+  inline size removed, one class on two badges, one on their row), new `error.html` and
+  `fragments/suggestions.html`.
 
 ### What users notice
 Search finds partial and differently punctuated titles and suggests while typing; the site opens without the
 sign-in page; the mobile menu works; pages load faster (cached files); friendly error pages; a favicon; dark
-text in the search box.
+text in the search box; tidy recommendation cards (equal posters, aligned badges, a meter the percentage fits).
 
 ### Outside the repository (nothing of this is in the code)
 - The application runs on a small VPS (Fastcom) behind Cloudflare and nginx, with MariaDB 11.8 in Docker.
@@ -76,13 +79,51 @@ text in the search box.
    open. Restrict to `health` unless Prometheus is used?
 8. The `users_anime_score.anime title` column holds a copy of the anime name on all 24 million rows (about
    440 MB) and is mapped by the entity, so it was left as it is.
+9. **Genre pills stick out of the recommendation cards on mid-size screens (existing, not caused by this
+   branch).** With 4 cards per row at 992-1199 px (and 3 per row at 768-991 px) a card is only about 216 px
+   wide, and the genre pills ("AWARD WINNING", "SUPERNATURAL") overshoot the card body by up to 32 px on 33 of
+   50 cards. The left column (meter + DETAILS button) is 91 px wide because of the DETAILS button, so the old
+   and the new meter width make no difference. A fix would be the breakpoints in `result.html`:
+   `col-sm-6 col-md-4 col-lg-3` -> `col-sm-6 col-lg-4 col-xl-3` (2 cards per row on tablets, 3 on small
+   desktops, 4 from 1200 px). It changes how many cards fit in a row, so it was not done without asking.
 
 ---
+
+## [0.5.0]
+<a id="050"></a>
+
+**Released:** 2026-09-21 23:15 CEST (21:15 UTC). Image built from `46150f2`. 60 tests pass.
+
+### Recommendation cards
+Three things looked untidy on the result page.
+
+- **`46150f2`** (2026-09-21 23:11, 3 files, +60 / -6) *Recommendation cards: aligned badges, wider meter, equal poster height*
+  - Fixed: **AVG and MAL badges were not aligned.** Both boxes had the same size (29.9 px), but the MAL badge
+    contains an icon (`fs-6`) that made its content taller and pushed its text 4.6 px lower than the AVG
+    text. Both badges are one flex box now (`.stat-badge`, `inline-flex`, centred, fixed min-height, common
+    font size and `line-height: 1`), and their row is `align-items-center`. Text offset: 4.6 px -> 0.
+  - Fixed: **the "Rated by" meter was too narrow.** It was fixed inline to 50 px (`style="width: 50px"`), a bold
+    "72.01%" is 46 px wide, so 2 px were left on each side. The size is in CSS now (`.vertical-progress`, 5rem
+    = 80 px, at least 16.9 px around the text) and the bar has a `min-height` of 2.75rem, so its two lines of text
+    ("72.01%" and "users") also fit tiny values.
+  - Fixed: **posters had different heights.** The link around the poster is a fixed 2:3 frame, but the picture
+    inside kept its own proportions (0.64 - 0.75 in the 48 loaded pictures), which gave 19 different picture
+    heights (345-403 px) and gaps below the shorter ones. The picture fills the frame now
+    (`object-fit: cover`, `object-position: center top`), all posters are equally tall (389 px at 1280 px) and
+    are cropped by a few percent at most.
+  - Test: `TemplatesAndAssetsTest` (badges share the class, no inline meter width, the css rules exist).
+  - Not changed: the DETAILS badge, the watchlist page (it has a MAL badge only, no AVG partner).
+
+**Verified:** measured in a browser on all 50 cards of `/result?id=20`, first as a prototype in the page, then
+on the staging container and on the live site: badge text offset 0 px, all badge boxes 32 px, all posters
+389 px high with no gap, meter 80 px, no genre pill outside its card at 1280 px and 375 px. At 992-1199 px the
+genre pills still stick out of the cards, exactly as before (question 9 above).
 
 ## [0.4.0]
 <a id="040"></a>
 
-**Released:** 2026-09-21 23:01 CEST (21:01 UTC). Image built from `2779ca4`. 59 tests pass.
+**Released:** 2026-09-21 23:01 CEST (21:01 UTC). Image built from `2779ca4`. 59 tests pass. (The changelog commit `a63bc09` below
+came afterwards and is not part of the deployed image.)
 
 ### Signing in is optional
 The sign-in page was the site root, so every visitor met a login form first although most people do not want an
@@ -102,7 +143,8 @@ account.
   - Tests: `AuthenticationControllerTest` (6), a menu-link test in `TemplatesAndAssetsTest`.
   - Not changed: the sign-in page itself (it still offers "Continue as Guest" and "Sign Up"); after signing out
     the user lands on the sign-in page as before.
-- *(this commit)* `CHANGELOG.md` rewritten as a release history.
+- **`a63bc09`** (23:03, 1 file, +261 / -188) `CHANGELOG.md` rewritten as a release history (versions, dates, every
+  commit, impact on existing code, questions for the author).
 
 **Verified:** built from the commit and run as a staging container against a copy of the production database:
 `/` -> 302 `/main`; `/login` 200; `/watchlist` and `/settings` -> 302 `/login`; wrong password -> `/login?error`
