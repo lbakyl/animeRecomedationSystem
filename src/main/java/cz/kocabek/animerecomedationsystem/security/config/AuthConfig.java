@@ -21,7 +21,7 @@ public class AuthConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.authorizeHttpRequests(requests -> requests
-                        .requestMatchers("/", "/main", "/submit", "/result", "/result/submit", "/search/suggest", "/register", "/assets/**", "/error","/anime/*","/actuator/**")
+                        .requestMatchers("/", "/main", "/submit", "/result", "/result/submit", "/search/suggest", "/register", "/assets/**", "/favicon.ico", "/error","/anime/*","/actuator/**")
                         .permitAll()
                         .anyRequest()
                         .authenticated()

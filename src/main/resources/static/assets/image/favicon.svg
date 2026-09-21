@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Anime Recommendation system</title>
+  <rect width="64" height="64" rx="14" fill="#1f2a37"/>
+  <polygon points="32,11 37.64,26.23 53.87,26.89 41.13,36.97 45.52,52.61 32,43.6 18.48,52.61 22.87,36.97 10.13,26.89 26.36,26.23" fill="#ffc107" stroke="#ffc107" stroke-width="2" stroke-linejoin="round"/>
+</svg>

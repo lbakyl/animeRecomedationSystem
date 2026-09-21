@@ -58,7 +58,7 @@
     </main>
     <footer th:replace="~{fragments/footer :: footer}"></footer>
     <th:block th:insert="~{fragments/core :: btScriptInclude}" />
-    <th:block th:insert="fragments/htmxFragment :: htmxFragment" />
+    <th:block th:insert="~{fragments/htmxFragment :: htmxFragment}" />
 </body>
 
 </html>

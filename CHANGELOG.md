@@ -94,6 +94,10 @@ Found while running the application in production behind nginx and Cloudflare on
   `WARN`, which made healthy requests look like problems. Hikari is back to the default level and the step
   timings (`UserAnimeScoreService`, `RecommendationService`) are `DEBUG`; use
   `LOGGING_LEVEL_CZ_KOCABEK_ANIMERECOMEDATIONSYSTEM=DEBUG` to see them again.
+- **Thymeleaf deprecation warning.** `watchlist.html` used the unwrapped fragment expression
+  `fragments/htmxFragment :: htmxFragment`, which made Thymeleaf log a `WARN` on every render of the watchlist
+  page and is to be removed in a future Thymeleaf version. It is now `~{fragments/htmxFragment :: htmxFragment}`.
+  It was the only occurrence in the templates.
 
 ### Added
 
@@ -104,6 +108,13 @@ Found while running the application in production behind nginx and Cloudflare on
 - `docs/deployment.md`: production guide (configuration, data load, nginx with TLS, rate limits and a restricted
   actuator, Cloudflare notes, update and rollback, backup).
 - `ProductionConfigTest` keeps the settings above from being lost again.
+- **Favicon.** Browsers ask for `/favicon.ico` on every visit and got a 404 (or, when not logged in, a redirect to
+  the login page). Added a simple placeholder icon (a yellow rating star on a dark rounded square, the yellow is
+  the accent colour already used by the sliders): `static/favicon.ico` (16, 32 and 48 px) and
+  `static/assets/image/favicon.svg`, linked in the shared `<head>` (`fragments/core.html`) so every page gets it,
+  and `/favicon.ico` is permitted for anonymous visitors in `AuthConfig`. Replace the two files to use a real logo.
+- `TemplatesAndAssetsTest`: no template may use the deprecated unwrapped fragment syntax again, and the favicon
+  files and their links must exist and be valid.
 
 ### Changed
 
