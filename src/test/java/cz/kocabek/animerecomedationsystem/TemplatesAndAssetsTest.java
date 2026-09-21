@@ -70,6 +70,17 @@ class TemplatesAndAssetsTest {
     }
 
     @Test
+    void searchBoxTextIsDarkOnItsLightBackground() throws IOException {
+        final var header = new ClassPathResource("templates/fragments/header.html").getContentAsString(StandardCharsets.UTF_8);
+        final var matcher = Pattern.compile("(?s)<input[^>]*id=\"animeName\".*?/>").matcher(header);
+
+        assertThat(matcher.find()).as("search input found").isTrue();
+        final var input = matcher.group();
+        // white text on the light grey field was hard to read
+        assertThat(input).contains("bg-light").contains("text-dark").doesNotContain("text-white");
+    }
+
+    @Test
     void mobileHeaderLayoutRulesMatchTheMarkup() throws IOException {
         final var header = new ClassPathResource("templates/fragments/header.html").getContentAsString(StandardCharsets.UTF_8);
         final var css = new ClassPathResource("static/assets/css/main.css").getContentAsString(StandardCharsets.UTF_8);
