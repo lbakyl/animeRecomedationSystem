@@ -70,6 +70,23 @@ class TemplatesAndAssetsTest {
     }
 
     @Test
+    void recommendationCardsUseTheSharedLayoutRules() throws IOException {
+        final var page = new ClassPathResource("templates/result.html").getContentAsString(StandardCharsets.UTF_8);
+        final var css = new ClassPathResource("static/assets/css/main.css").getContentAsString(StandardCharsets.UTF_8);
+
+        // AVG and MAL badges are the same flex box, otherwise the icon of the MAL badge pushes its text lower
+        assertThat(page.split("stat-badge", -1).length - 1).as("badges using .stat-badge").isEqualTo(2);
+        assertThat(css).contains(".stat-badge").contains("display: inline-flex").contains("align-items: center");
+
+        // the meter box is sized in css (5rem), not by an inline 50px that was too narrow for the percentage
+        assertThat(page).doesNotContain("width: 50px");
+        assertThat(css).contains(".vertical-progress {").contains("width: 5rem");
+
+        // every poster fills the same 2:3 frame instead of keeping its own proportions
+        assertThat(css).contains("aspect-ratio: 2/3").contains("object-fit: cover");
+    }
+
+    @Test
     void guestMenuOffersSignInAndSignUp() throws IOException {
         final var menu = new ClassPathResource("templates/fragments/menuContent.html").getContentAsString(StandardCharsets.UTF_8);
         final var guest = menu.substring(menu.indexOf("<!--guest menu-->"));

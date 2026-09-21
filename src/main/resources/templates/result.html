@@ -40,7 +40,7 @@
                                             <div class="flex-fill">
                                                 <small class="text-muted mb-2" style="font-style: italic;">Rated
                                                     by</small>
-                                                <div class="vertical-progress " style="height: 100px; width: 50px;">
+                                                <div class="vertical-progress">
                                                     <div class="vertical-progress-bar" th:style="'height: calc(' + ${recommend.percentageOccurrences} + '% + 15px); background-color:' +
                        (${recommend.percentageOccurrences} >= 70 ? '#28a745' :
                         (${recommend.percentageOccurrences} >= 40 ? '#ffc107' : '#dc3545'))">
@@ -92,12 +92,12 @@
 
 
                                 <!-- Badges -->
-                                <div class="d-flex justify-content-between mt-3 ">
-                                    <span class="badge bg-success"
+                                <div class="d-flex justify-content-between align-items-center mt-3 ">
+                                    <span class="badge bg-success stat-badge"
                                         th:text="'Avg: ' + ${#numbers.formatDecimal(recommend.getAverageRating(), 1, 2)}">
                                     </span>
 
-                                    <span class="badge bg-info">
+                                    <span class="badge bg-info stat-badge">
                                         <i class="ti ti-world fs-6"></i>
                                         <span th:text="'MAL: ' + ${recommend.animeInfo.score}"></span>
                                     </span>
