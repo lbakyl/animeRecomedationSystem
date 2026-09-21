@@ -98,6 +98,20 @@ Found while running the application in production behind nginx and Cloudflare on
   `fragments/htmxFragment :: htmxFragment`, which made Thymeleaf log a `WARN` on every render of the watchlist
   page and is to be removed in a future Thymeleaf version. It is now `~{fragments/htmxFragment :: htmxFragment}`.
   It was the only occurrence in the templates.
+- **Mobile menu opened off-screen.** Below Bootstrap's `lg` breakpoint (992 px) the navbar collapses, but the
+  hamburger button and the opened menu sat in a narrow flex column beside the title. The menu opened as a card
+  in that column, wider than the space left, so the page became wider than the screen (375 px -> 538 px) with
+  the title cut off and the menu pushed out on the right. `header.html` got hook classes (`header-row`,
+  `header-spacer`, `header-title`, `header-actions`) and `main.css` a `@media (max-width: 991.98px)` block: the
+  header is a two-column grid there (title | hamburger), and the opened menu takes the full width of the second
+  row. The title is 1.6rem on small screens. Screens of 992 px and more are not changed.
+- **Static files were never cached.** Spring Security sends `Cache-Control: no-store` for every response, so
+  browsers downloaded the CSS (440 KB), the scripts and the 2.3 MB header photo again on every page view, and
+  Cloudflare could not cache them either. In the production profile static files now get
+  `Cache-Control: max-age=2592000, public` (30 days), and everything below `/assets/**` is served under a name
+  with a content hash (`main-<hash>.css`; links written with `@{...}` and the `url(...)` references inside the
+  CSS are rewritten automatically), so a changed file gets a new URL and is never served stale. HTML pages keep
+  `no-store`. Old unhashed URLs still work.
 
 ### Added
 
@@ -123,7 +137,7 @@ Found while running the application in production behind nginx and Cloudflare on
 
 ### How the clean-up was verified
 
-- 47 unit tests pass, including `ProductionConfigTest` and `TemplatesAndAssetsTest`.
+- 49 unit tests pass, including `ProductionConfigTest` and `TemplatesAndAssetsTest`.
 - The commit was built with `-Pprod,container-build-base` and started as a staging container **without** any
   extra environment variable, against a copy of the production database:
   - with the headers of the reverse proxy (`Host`, `X-Forwarded-Proto: https`) the redirect after a search is
@@ -136,6 +150,15 @@ Found while running the application in production behind nginx and Cloudflare on
 - Favicon on the staging container: `/favicon.ico` answers 200 (`image/x-icon`, valid ICO) without logging in, the
   SVG is served, and every page (including the login page) links both. The search flows and the log (0 `WARN`) are
   unchanged.
+- Caching on the staging container: HTML pages `no-store`; all linked assets carry hashed names and
+  `max-age=2592000, public` without cookies; the header photo is referenced from the CSS by its hashed name;
+  the old unhashed URLs still answer 200; a CSS revalidation with `If-Modified-Since` answers 304. (Files that
+  have an ETag, the small scripts and the photo, answer a conditional request with the full file instead of 304.
+  That is correct, only not optimal, and happens only after the 30 days or on a hard reload.)
+- Mobile menu, measured in a browser on the staging container at 320, 375, 414 and 991 px: no horizontal overflow
+  with the menu and its dropdown open, the title and the hamburger stay in the first row, the menu is a
+  full-width card below. At 992 px and 1280 px the positions and sizes of the title and the menu are identical to
+  the previous version.
 - The Thymeleaf warning only appears when the watchlist page is rendered for a logged-in user, which was not
   reproduced on staging (no test account). Instead the pattern used by `TemplatesAndAssetsTest` was checked to
   flag the old `watchlist.html` (the exact expression from the production log) and to pass the fixed one.
