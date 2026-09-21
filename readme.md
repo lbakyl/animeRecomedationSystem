@@ -154,7 +154,8 @@ Key configuration options in `application-<profile>.yml` (`dev`, `local`, `prod`
 ## 🌐 API Endpoints
 
 ### Public Endpoints
-- `GET /` - Login page
+- `GET /` - Redirects to `/main`: the site opens in the application, signing in is optional
+- `GET /login` - Sign-in page (linked from the menu)
 - `GET /register` - User registration
 - `GET /main` - Home page (guest access)
 - `POST /submit` - Search form submission

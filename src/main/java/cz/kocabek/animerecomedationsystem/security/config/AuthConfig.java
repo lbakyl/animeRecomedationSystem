@@ -27,7 +27,9 @@ public class AuthConfig {
                         .authenticated()
                 )
                 .formLogin(form -> form
-                        .loginPage("/").loginProcessingUrl("/login")
+                        // "/" is the application itself now (it redirects to /main); the sign-in page is /login.
+                        // Failed sign-ins go to /login?error and sign-outs to /login?logout (Spring's defaults).
+                        .loginPage("/login").loginProcessingUrl("/login")
                         .defaultSuccessUrl("/main", true)
                         .permitAll()
                         .successHandler(successHandler))

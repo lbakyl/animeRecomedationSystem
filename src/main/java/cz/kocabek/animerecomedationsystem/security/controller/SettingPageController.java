@@ -32,7 +32,7 @@ public class SettingPageController {
 
     private static final String SETTING_PAGE = "settings";
     private static final String SETTING_ENDPOINT = "/settings";
-    private static final String INDEX_ENDPOINT = "/";
+    private static final String LOGIN_ENDPOINT = "/login"; // the sign-in page (the root URL opens the app now)
     private static final String CHANGEPASS_ENDPOINT = "/changePassword";
     private static final String DELETEACC_ENDPOINT = "/delete";
     private static final String MAIN_ENDPOINT = "/main";
@@ -71,7 +71,7 @@ public class SettingPageController {
         }
         passwordService.changePassword(settingForm);
         redirectAttributes.addFlashAttribute("successMessage", "Your password was changed successfully.");
-        return "redirect:" + INDEX_ENDPOINT;
+        return "redirect:" + LOGIN_ENDPOINT;
     }
 
     /*HTMX method for returning just the error div into page or deleting account and HTMX redirecting to the login page */

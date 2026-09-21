@@ -20,12 +20,25 @@ public class AuthenticationController {
 
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(AuthenticationController.class);
     private static final String REG_ENDPOINT = "auth/registration";
+    /** URL of the sign-in page; must match {@code loginPage} in AuthConfig. */
+    public static final String LOGIN_ENDPOINT = "/login";
 
     public AuthenticationController(RegistrationService registration) {
         this.registration = registration;
     }
 
+    /**
+     * The site opens straight in the application; signing in is optional and reached from the menu.
+     */
     @GetMapping("/")
+    public String getStartPage() {
+        return "redirect:/main";
+    }
+
+    /**
+     * The sign-in page (also the target of Spring Security for pages that need an account, see AuthConfig).
+     */
+    @GetMapping(LOGIN_ENDPOINT)
     public String getSignPage() {
         return "auth/index";
     }
@@ -47,6 +60,6 @@ public class AuthenticationController {
             return REG_ENDPOINT;
         }
         redirectAttributes.addFlashAttribute("successMessage", "Your account was created successfully. You can now sign in.");
-        return "redirect:/";
+        return "redirect:" + LOGIN_ENDPOINT;
     }
 }

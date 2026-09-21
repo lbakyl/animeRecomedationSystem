@@ -70,6 +70,19 @@ class TemplatesAndAssetsTest {
     }
 
     @Test
+    void guestMenuOffersSignInAndSignUp() throws IOException {
+        final var menu = new ClassPathResource("templates/fragments/menuContent.html").getContentAsString(StandardCharsets.UTF_8);
+        final var guest = menu.substring(menu.indexOf("<!--guest menu-->"));
+
+        assertThat(guest).contains("@{/login}").contains("Sign In").contains("@{/register}").contains("Sign Up");
+        // "/" is the application now, not the sign-in page
+        assertThat(menu).doesNotContain("th:href=\"@{/}\"");
+
+        final var registration = new ClassPathResource("templates/auth/registration.html").getContentAsString(StandardCharsets.UTF_8);
+        assertThat(registration).contains("@{/login}").doesNotContain("th:href=\"@{/}\"");
+    }
+
+    @Test
     void searchBoxTextIsDarkOnItsLightBackground() throws IOException {
         final var header = new ClassPathResource("templates/fragments/header.html").getContentAsString(StandardCharsets.UTF_8);
         final var matcher = Pattern.compile("(?s)<input[^>]*id=\"animeName\".*?/>").matcher(header);
