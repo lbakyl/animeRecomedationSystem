@@ -84,6 +84,21 @@ class TemplatesAndAssetsTest {
     }
 
     @Test
+    void errorPageCoversTheCommonStatusesAndLinksBackToTheSearch() throws IOException {
+        final var page = new ClassPathResource("templates/error.html").getContentAsString(StandardCharsets.UTF_8);
+
+        // Spring Boot renders the view "error" for /error; without this template the Whitelabel page appears
+        assertThat(page).contains("th:switch=\"${status}\"")
+                .contains("th:case=\"403\"")   // expired session / invalid CSRF token
+                .contains("th:case=\"404\"")
+                .contains("th:case=\"400\"")
+                .contains("th:case=\"*\"");    // 5xx and everything else
+        assertThat(page).contains("@{/main}");
+        // it is shown exactly when session and CSRF token are missing, so it may not depend on them
+        assertThat(page).doesNotContain("th:object").doesNotContain("_csrf").doesNotContain("${anime}");
+    }
+
+    @Test
     void theSharedHeadOfEveryPageLinksTheFavicon() throws IOException {
         final var head = new ClassPathResource("templates/fragments/core.html").getContentAsString(StandardCharsets.UTF_8);
         assertThat(head).contains("@{/favicon.ico}").contains("@{/assets/image/favicon.svg}");

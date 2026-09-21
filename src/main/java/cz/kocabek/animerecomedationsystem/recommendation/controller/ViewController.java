@@ -3,6 +3,7 @@ package cz.kocabek.animerecomedationsystem.recommendation.controller;
 import cz.kocabek.animerecomedationsystem.account.service.AccService;
 import cz.kocabek.animerecomedationsystem.account.service.WatchListService;
 import cz.kocabek.animerecomedationsystem.recommendation.dto.InputDTO;
+import cz.kocabek.animerecomedationsystem.recommendation.entity.Anime;
 import cz.kocabek.animerecomedationsystem.recommendation.service.DTOResultBuilder;
 import cz.kocabek.animerecomedationsystem.recommendation.search.AnimeSearchException;
 import cz.kocabek.animerecomedationsystem.recommendation.service.RecommendationService;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.server.ResponseStatusException;
 
 @AllArgsConstructor
 @Controller
@@ -135,7 +137,13 @@ public class ViewController {
     /* detail page */
     @GetMapping("/anime/{id}")
     public String getAnimePage(@PathVariable Long id, Model model) {
-        final var animeDetail = animeService.getAnimeByIdWithGenres(id);
+        final Anime animeDetail;
+        try {
+            animeDetail = animeService.getAnimeByIdWithGenres(id);
+        } catch (IllegalArgumentException e) {
+            // an unknown id is a 404, not a server error (which also filled the log with a stack trace)
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Anime not found");
+        }
         model.addAttribute("detail", animeDetail);
         model.addAttribute(INPUT_ATR_NAME, config.getConfigForm());
         model.addAttribute(ATR_ACTION, POST_RESULT_SUBMIT);

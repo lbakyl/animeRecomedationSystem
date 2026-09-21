@@ -131,6 +131,14 @@ class ViewControllerSearchTest {
     }
 
     @Test
+    void unknownAnimeDetailPageIsA404NotAServerError() throws Exception {
+        when(animeService.getAnimeByIdWithGenres(999L)).thenThrow(new IllegalArgumentException("Anime not found"));
+
+        mockMvc.perform(get("/anime/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void unknownResultIdGoesBackToTheSearchWithAMessage() throws Exception {
         when(animeService.getAnimeNameById(anyLong())).thenReturn(null);
 

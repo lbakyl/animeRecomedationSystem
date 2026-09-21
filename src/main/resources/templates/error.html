@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<!--
+    Error page for every error of the application (Spring Boot renders the view "error" for /error).
+    It must not need a session, a CSRF token or the search form: it is shown exactly when those are missing.
+    Available model attributes: status (e.g. 403), error (reason phrase). The message and the exception are
+    hidden on purpose (server.error.include-message=never), and the requested path is not echoed.
+-->
+
+<head th:replace="~{fragments/core :: head(~{::title},_)}">
+    <title>Something went wrong - Anime Recommendation system</title>
+</head>
+
+<body class="bg-light d-flex flex-column min-vh-100">
+    <!-- same photo band as the other pages -->
+    <section class="py-4 text-white text-center position-relative">
+        <div class="position-absolute top-0 start-0 w-100 h-100 header-bg"></div>
+        <div class="container position-relative z-index-2">
+            <a th:href="@{/main}" class="text-decoration-none">
+                <p class="h2 fw-bold text-light mb-0">Anime Recommendation system</p>
+            </a>
+        </div>
+    </section>
+
+    <main class="flex-grow-1">
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-md-9 col-lg-7">
+                    <div class="card shadow border-0 text-center p-4 p-md-5" role="alert">
+                        <th:block th:switch="${status}">
+
+                            <!-- 403: a form was sent with an expired session / invalid security token -->
+                            <th:block th:case="403">
+                                <div class="display-4 text-warning mb-3"><i class="ti ti-lock" aria-hidden="true"></i></div>
+                                <h1 class="h3 fw-bold">Your session has expired</h1>
+                                <p class="text-secondary mb-4">
+                                    The page you sent was opened in a session that no longer exists, for example because it
+                                    stayed open for a long time or a submitted form was reloaded. Nothing is wrong on your
+                                    side. Please start the search again.
+                                </p>
+                            </th:block>
+
+                            <!-- 404: page or file does not exist -->
+                            <th:block th:case="404">
+                                <div class="display-4 text-warning mb-3"><i class="ti ti-search" aria-hidden="true"></i></div>
+                                <h1 class="h3 fw-bold">We could not find that page</h1>
+                                <p class="text-secondary mb-4">
+                                    The address may be mistyped, or the anime or page you asked for does not exist (any more).
+                                    You can search for the title you have in mind instead.
+                                </p>
+                            </th:block>
+
+                            <!-- 400: unreadable request, e.g. a damaged link -->
+                            <th:block th:case="400">
+                                <div class="display-4 text-warning mb-3"><i class="ti ti-alert-triangle" aria-hidden="true"></i></div>
+                                <h1 class="h3 fw-bold">That link does not look right</h1>
+                                <p class="text-secondary mb-4">
+                                    The request could not be understood. Please go back to the search and try again.
+                                </p>
+                            </th:block>
+
+                            <!-- everything else, mainly 500: a problem on our side -->
+                            <th:block th:case="*">
+                                <div class="display-4 text-danger mb-3"><i class="ti ti-alert-triangle" aria-hidden="true"></i></div>
+                                <h1 class="h3 fw-bold">Something went wrong on our side</h1>
+                                <p class="text-secondary mb-4">
+                                    The problem has been logged. Please try again in a moment; if it keeps happening,
+                                    the site may be under maintenance.
+                                </p>
+                            </th:block>
+
+                        </th:block>
+
+                        <div>
+                            <a th:href="@{/main}" class="btn btn-lg btn-success fw-bold rounded-pill shadow-sm text-dark">
+                                Back to the search
+                            </a>
+                        </div>
+                        <p class="small text-muted mt-4 mb-0">
+                            Error <span th:text="${status}">500</span>
+                            <span th:if="${error}"> &middot; <span th:text="${error}">Internal Server Error</span></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+
+</html>
