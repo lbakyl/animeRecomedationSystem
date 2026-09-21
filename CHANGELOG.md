@@ -123,6 +123,9 @@ Found while running the application in production behind nginx and Cloudflare on
 - **Unknown anime page was a 500.** `/anime/{id}` with an id that does not exist threw an
   `IllegalArgumentException`, which answered 500 and wrote an `ERROR` with a stack trace to the log for a
   harmless typo or a bot. It is a 404 now (`ResponseStatusException`).
+- **White text in the search box.** The search field has a light grey background but used `text-white`, so the
+  typed text was hard to read. It is `text-dark` now (`rgb(38,38,38)` on `rgb(229,229,229)`, contrast 12:1);
+  `TemplatesAndAssetsTest` keeps it that way. It was the only input with a white text class.
 
 ### Added
 
@@ -148,7 +151,7 @@ Found while running the application in production behind nginx and Cloudflare on
 
 ### How the clean-up was verified
 
-- 51 unit tests pass, including `ProductionConfigTest` and `TemplatesAndAssetsTest`.
+- 52 unit tests pass, including `ProductionConfigTest` and `TemplatesAndAssetsTest`.
 - The commit was built with `-Pprod,container-build-base` and started as a staging container **without** any
   extra environment variable, against a copy of the production database:
   - with the headers of the reverse proxy (`Host`, `X-Forwarded-Proto: https`) the redirect after a search is
