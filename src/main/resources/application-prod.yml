@@ -6,6 +6,23 @@ spring:
       - optional:configtree:/run/secrets/
   application:
     name: animeRecommendationSystem
+  web:
+    resources:
+      # Static files (css, js, images, favicon) may be cached for a month. Without this Spring Security sends
+      # "Cache-Control: no-store" for every file and browsers download the css, the scripts and the 2 MB header
+      # photo again on every page view.
+      cache:
+        cachecontrol:
+          max-age: 30d
+          cache-public: true
+      # Everything below /assets/** is served under a name that contains a hash of the file content
+      # (main-<hash>.css, links written by Thymeleaf's @{...} are rewritten automatically), so a changed file
+      # gets a new URL and is never served stale, however long the old one is cached.
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: /assets/**
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
     url: ${DB_URL}

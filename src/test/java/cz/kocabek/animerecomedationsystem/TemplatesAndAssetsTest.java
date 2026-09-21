@@ -70,6 +70,20 @@ class TemplatesAndAssetsTest {
     }
 
     @Test
+    void mobileHeaderLayoutRulesMatchTheMarkup() throws IOException {
+        final var header = new ClassPathResource("templates/fragments/header.html").getContentAsString(StandardCharsets.UTF_8);
+        final var css = new ClassPathResource("static/assets/css/main.css").getContentAsString(StandardCharsets.UTF_8);
+
+        // the classes the small-screen layout (title | hamburger, then the menu below) hangs on
+        for (final var hook : List.of("header-row", "header-spacer", "header-title", "header-actions")) {
+            assertThat(header).as("markup has ." + hook).contains(hook);
+            assertThat(css).as("css styles ." + hook).contains("." + hook);
+        }
+        // below Bootstrap's lg breakpoint, where the navbar collapses
+        assertThat(css).contains("@media (max-width: 991.98px)");
+    }
+
+    @Test
     void theSharedHeadOfEveryPageLinksTheFavicon() throws IOException {
         final var head = new ClassPathResource("templates/fragments/core.html").getContentAsString(StandardCharsets.UTF_8);
         assertThat(head).contains("@{/favicon.ico}").contains("@{/assets/image/favicon.svg}");

@@ -44,6 +44,16 @@ class ProductionConfigTest {
     }
 
     @Test
+    void staticFilesAreCachedAndVersionedByContentHash() {
+        final var environment = prodEnvironment();
+        assertThat(environment.getProperty("spring.web.resources.cache.cachecontrol.max-age")).isEqualTo("30d");
+        assertThat(environment.getProperty("spring.web.resources.cache.cachecontrol.cache-public", Boolean.class)).isTrue();
+        // the hash in the file name is what makes the long cache safe: a changed file gets a new URL
+        assertThat(environment.getProperty("spring.web.resources.chain.strategy.content.enabled", Boolean.class)).isTrue();
+        assertThat(environment.getProperty("spring.web.resources.chain.strategy.content.paths")).isEqualTo("/assets/**");
+    }
+
+    @Test
     void secureCookieCanBeSwitchedOffExplicitlyForLocalTesting() {
         final var environment = prodEnvironment();
         environment.getPropertySources().addFirst(new MapPropertySource("env", Map.of("SESSION_COOKIE_SECURE", "false")));

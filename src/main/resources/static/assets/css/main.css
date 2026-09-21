@@ -120,3 +120,46 @@ a.mal-link {
     text-align: center;
     margin-bottom: 20px;
 }
+/* ---------------------------------------------------------------------------
+   Site header on small screens (below Bootstrap's lg breakpoint, where the navbar
+   collapses): the title and the hamburger button share the first row and the opened
+   menu takes the full width of the second row. Without this the menu opened as a narrow
+   column beside the title, which made the page wider than the screen (the menu appeared
+   cut off on the right). Screens of 992px and more are not affected.
+   --------------------------------------------------------------------------- */
+@media (max-width: 991.98px) {
+    .header-row {
+        display: grid !important;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        column-gap: 0.5rem;
+    }
+
+    .header-spacer {
+        display: none !important;
+    }
+
+    .header-title {
+        grid-column: 1;
+        grid-row: 1;
+        min-width: 0;
+        font-size: 1.6rem !important; /* .fs-1 is !important as well */
+        line-height: 1.2;
+    }
+
+    /* the toggler and the menu become cells of the grid */
+    .header-actions {
+        display: contents !important;
+    }
+
+    .header-row .navbar-toggler {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .header-row .navbar-collapse {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        margin-top: 0.75rem;
+    }
+}
