@@ -123,7 +123,7 @@ Found while running the application in production behind nginx and Cloudflare on
 
 ### How the clean-up was verified
 
-- 43 unit tests pass, including `ProductionConfigTest`.
+- 47 unit tests pass, including `ProductionConfigTest` and `TemplatesAndAssetsTest`.
 - The commit was built with `-Pprod,container-build-base` and started as a staging container **without** any
   extra environment variable, against a copy of the production database:
   - with the headers of the reverse proxy (`Host`, `X-Forwarded-Proto: https`) the redirect after a search is
@@ -133,6 +133,12 @@ Found while running the application in production behind nginx and Cloudflare on
     `WARN`), and `LOGGING_LEVEL_CZ_KOCABEK_ANIMERECOMEDATIONSYSTEM=DEBUG` brings the step timings back;
   - all search flows of the first section still behave the same.
 - `compose.prod.yaml` passes `docker compose config`.
+- Favicon on the staging container: `/favicon.ico` answers 200 (`image/x-icon`, valid ICO) without logging in, the
+  SVG is served, and every page (including the login page) links both. The search flows and the log (0 `WARN`) are
+  unchanged.
+- The Thymeleaf warning only appears when the watchlist page is rendered for a logged-in user, which was not
+  reproduced on staging (no test account). Instead the pattern used by `TemplatesAndAssetsTest` was checked to
+  flag the old `watchlist.html` (the exact expression from the production log) and to pass the fixed one.
 - Note: this branch is based on `last-version`, which already uses Spring Boot 3.5.13. An installation that was
   built from older code (3.5.7) is upgraded to it when it deploys this branch.
 
