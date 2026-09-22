@@ -113,6 +113,11 @@ public class RecommendationService {
     private Map<Long, AnimeOutDTO> enrichedMapByDetails(Map<Long, AnimeOutDTO> map) {
         final var genresDetail = animeGenreService.getGenresByAnimeIds(map.keySet());
         genresDetail.forEach((animeId, genres) -> map.get(animeId).setGenres(genres));
+        final var typeAndRatingDetail = animeService.getTypeAndRatingByIds(map.keySet());
+        typeAndRatingDetail.forEach((animeId, info) -> {
+            map.get(animeId).setType(info.type());
+            map.get(animeId).setRating(info.rating());
+        });
         return map;
     }
 

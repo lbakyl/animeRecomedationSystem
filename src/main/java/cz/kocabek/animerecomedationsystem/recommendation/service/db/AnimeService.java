@@ -2,10 +2,14 @@ package cz.kocabek.animerecomedationsystem.recommendation.service.db;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import cz.kocabek.animerecomedationsystem.recommendation.dto.AnimeDto;
+import cz.kocabek.animerecomedationsystem.recommendation.dto.AnimeTypeRatingInfo;
 import cz.kocabek.animerecomedationsystem.recommendation.entity.Anime;
 import cz.kocabek.animerecomedationsystem.recommendation.repository.AnimeRepository;
 import cz.kocabek.animerecomedationsystem.recommendation.search.SearchText;
@@ -67,5 +71,19 @@ public class AnimeService {
 
     public String getAnimeNameById(Long id) {
         return animeRepository.getAnimeNameById(id);
+    }
+
+    public Map<Long, AnimeTypeRatingInfo> getTypeAndRatingByIds(Collection<Long> ids) {
+        return animeRepository.getTypeAndRatingByIds(ids).stream()
+                .collect(Collectors.toMap(AnimeTypeRatingInfo::id, info -> info));
+    }
+
+    /**
+     * All distinct "Type" values (TV, Movie, OVA, ...), for the "Type" advanced-options list; rarely changes,
+     * so it is cached.
+     */
+    @Cacheable("animeTypes")
+    public List<String> getAllTypes() {
+        return animeRepository.findDistinctTypes();
     }
 }

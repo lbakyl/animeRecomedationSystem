@@ -20,6 +20,9 @@ public final class ConfigConstant {
     public static final double SCORE_WEIGHT = 0.7;
     //final size of detail list for the recommendation in the UI
     public static final int FINAL_ANIME_LIST_SIZE = 50;
+    //values posted by the "Content Filters" checkboxes, see fragments/header.html
+    public static final String EXCLUDE_ADULT = "adult";
+    public static final String EXCLUDE_ECCHI = "ecchi";
 
     private ConfigConstant() {
     }

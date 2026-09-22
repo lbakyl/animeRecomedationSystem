@@ -7,11 +7,13 @@ import cz.kocabek.animerecomedationsystem.recommendation.entity.Anime;
 import cz.kocabek.animerecomedationsystem.recommendation.service.DTOResultBuilder;
 import cz.kocabek.animerecomedationsystem.recommendation.search.AnimeSearchException;
 import cz.kocabek.animerecomedationsystem.recommendation.service.RecommendationService;
+import cz.kocabek.animerecomedationsystem.recommendation.service.db.AnimeGenreService;
 import cz.kocabek.animerecomedationsystem.recommendation.service.db.AnimeSearchService;
 import cz.kocabek.animerecomedationsystem.recommendation.service.db.AnimeService;
 import cz.kocabek.animerecomedationsystem.recommendation.service.recommendationconfig.RecommendationConfig;
 import jakarta.validation.Valid;
 import jakarta.validation.ValidationException;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,9 +56,26 @@ public class ViewController {
     private final RecommendationService recommendationService;
     private final AnimeService animeService;
     private final AnimeSearchService searchService;
+    private final AnimeGenreService animeGenreService;
     private final DTOResultBuilder resultBuilder;
     private final RecommendationConfig config;
     private final WatchListService watchListService;
+
+    /**
+     * Options offered by the "Genres" advanced-options list, on every page that has the search form.
+     */
+    @ModelAttribute("availableGenres")
+    public List<String> availableGenres() {
+        return animeGenreService.getAllGenreNames();
+    }
+
+    /**
+     * Options offered by the "Type" advanced-options list, on every page that has the search form.
+     */
+    @ModelAttribute("availableTypes")
+    public List<String> availableTypes() {
+        return animeService.getAllTypes();
+    }
 
     @GetMapping("/" + MAIN_PAGE)
     public String getHomePage(Model model) {
@@ -183,7 +202,8 @@ public class ViewController {
         // the result page shows the real title, not whatever spelling was typed
         final var title = animeService.getAnimeNameById(id);
         config.setAnimeName(title);
-        config.setConfigForm(new InputDTO(title, form.minRating(), form.maxUsers(), form.onlyInAnimeGenres(), id));
+        config.setConfigForm(new InputDTO(title, form.minRating(), form.maxUsers(), form.onlyInAnimeGenres(), id,
+                form.genres(), form.types(), form.excludedContent()));
         resultBuilder.init(title);
         return id;
     }

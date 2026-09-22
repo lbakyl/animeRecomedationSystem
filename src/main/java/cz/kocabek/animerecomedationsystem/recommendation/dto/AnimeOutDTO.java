@@ -21,6 +21,13 @@ public class AnimeOutDTO {
 
     private List<String> genres;
 
+    /* "TV", "Movie", "OVA", ... and the MyAnimeList content rating ("G - All Ages" .. "Rx - Hentai"); both are
+     * only known once {@link cz.kocabek.animerecomedationsystem.recommendation.service.RecommendationService}
+     * enriches the map, i.e. before the "Type" and "Content Filters" advanced options can be applied. */
+    private String type;
+
+    private String rating;
+
     /* True is in the user's watch list, false was removed from a list, null = is not in the watch list */
     private Boolean inWatchList;
 

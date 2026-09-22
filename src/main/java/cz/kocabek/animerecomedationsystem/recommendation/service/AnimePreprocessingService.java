@@ -2,6 +2,7 @@ package cz.kocabek.animerecomedationsystem.recommendation.service;
 
 import cz.kocabek.animerecomedationsystem.recommendation.dto.AnimeOutDTO;
 import cz.kocabek.animerecomedationsystem.recommendation.service.db.AnimeGenreService;
+import cz.kocabek.animerecomedationsystem.recommendation.service.recommendationconfig.ConfigConstant;
 import cz.kocabek.animerecomedationsystem.recommendation.service.recommendationconfig.RecommendationConfig;
 
 import org.springframework.stereotype.Service;
@@ -13,6 +14,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class AnimePreprocessingService {
+
+    private static final String ECCHI_GENRE = "Ecchi";
 
     final AnimeGenreService animeGenreService;
     final RecommendationConfig config;
@@ -34,6 +37,26 @@ public class AnimePreprocessingService {
         if (config.isOnlyInAnimeGenres()) {
             final var genres = animeGenreService.getGenresForAnime(config.getAnimeId());
             filters.add(entry -> entry.getValue().getGenres().stream().anyMatch(genres::contains));
+        }
+        if (!config.getGenres().isEmpty()) {
+            final var wanted = config.getGenres();
+            filters.add(entry -> entry.getValue().getGenres().stream().anyMatch(wanted::contains));
+        }
+        if (!config.getTypes().isEmpty()) {
+            final var wanted = config.getTypes();
+            // wanted may be an immutable List.of(...), whose contains(null) throws instead of returning false
+            filters.add(entry -> entry.getValue().getType() != null && wanted.contains(entry.getValue().getType()));
+        }
+        final var excludedContent = config.getExcludedContent();
+        if (excludedContent.contains(ConfigConstant.EXCLUDE_ADULT)) {
+            // MyAnimeList's own rating scale has one 18+/hentai tier, "Rx - Hentai"
+            filters.add(entry -> {
+                final var rating = entry.getValue().getRating();
+                return rating == null || !rating.startsWith("Rx");
+            });
+        }
+        if (excludedContent.contains(ConfigConstant.EXCLUDE_ECCHI)) {
+            filters.add(entry -> entry.getValue().getGenres().stream().noneMatch(ECCHI_GENRE::equalsIgnoreCase));
         }
         return filters;
     }

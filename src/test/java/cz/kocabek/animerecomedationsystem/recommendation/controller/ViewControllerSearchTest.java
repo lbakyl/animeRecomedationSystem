@@ -27,6 +27,7 @@ import cz.kocabek.animerecomedationsystem.recommendation.search.AnimeSearchExcep
 import cz.kocabek.animerecomedationsystem.recommendation.search.AnimeSearchException.Reason;
 import cz.kocabek.animerecomedationsystem.recommendation.service.DTOResultBuilder;
 import cz.kocabek.animerecomedationsystem.recommendation.service.RecommendationService;
+import cz.kocabek.animerecomedationsystem.recommendation.service.db.AnimeGenreService;
 import cz.kocabek.animerecomedationsystem.recommendation.service.db.AnimeSearchService;
 import cz.kocabek.animerecomedationsystem.recommendation.service.db.AnimeService;
 import cz.kocabek.animerecomedationsystem.recommendation.service.recommendationconfig.RecommendationConfig;
@@ -44,8 +45,11 @@ class ViewControllerSearchTest {
     void setUp() {
         animeService = mock(AnimeService.class);
         searchService = mock(AnimeSearchService.class);
+        final var animeGenreService = mock(AnimeGenreService.class);
+        when(animeGenreService.getAllGenreNames()).thenReturn(List.of());
+        when(animeService.getAllTypes()).thenReturn(List.of());
         final var controller = new ViewController(mock(AccService.class), mock(RecommendationService.class),
-                animeService, searchService, mock(DTOResultBuilder.class), new RecommendationConfig(),
+                animeService, searchService, animeGenreService, mock(DTOResultBuilder.class), new RecommendationConfig(),
                 mock(WatchListService.class));
         // templates are not rendered here (default resolver only forwards / redirects),
         // the view name, redirects and the model are checked

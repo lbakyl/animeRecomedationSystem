@@ -10,11 +10,21 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.lang.NonNull;
 
 import cz.kocabek.animerecomedationsystem.recommendation.dto.AnimeDto;
+import cz.kocabek.animerecomedationsystem.recommendation.dto.AnimeTypeRatingInfo;
 import cz.kocabek.animerecomedationsystem.recommendation.entity.Anime;
 
 public interface AnimeRepository extends JpaRepository<Anime, Long> {
 
     Iterable<Anime> findTop5ByGenres_GenreName(@NonNull String genreName);
+
+    @Query("""
+            select new cz.kocabek.animerecomedationsystem.recommendation.dto.AnimeTypeRatingInfo(a.id, a.type, a.rating)
+                        from Anime a
+                        where a.id in :animeIds""")
+    List<AnimeTypeRatingInfo> getTypeAndRatingByIds(@Param("animeIds") @NonNull Collection<Long> animeIds);
+
+    @Query("select distinct a.type from Anime a where a.type is not null and a.type <> '' order by a.type")
+    List<String> findDistinctTypes();
 
     @Query("""
             select new cz.kocabek.animerecomedationsystem.recommendation.dto.AnimeDto(a.id,a.name,a.score,a.imageURL)

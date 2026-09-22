@@ -6,11 +6,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import cz.kocabek.animerecomedationsystem.recommendation.dto.AnimeTypeRatingInfo;
 import cz.kocabek.animerecomedationsystem.recommendation.entity.Anime;
 import cz.kocabek.animerecomedationsystem.recommendation.repository.AnimeRepository;
 
@@ -69,5 +71,25 @@ class AnimeServiceFormTest {
 
         assertThat(animeService.getAnimeIdForForm("Naruto", null)).isEqualTo(20L);
         verify(animeRepository, never()).findById(org.mockito.ArgumentMatchers.anyLong());
+    }
+
+    @Test
+    void typeAndRatingByIdsAreIndexedById() {
+        when(animeRepository.getTypeAndRatingByIds(List.of(1L, 2L))).thenReturn(List.of(
+                new AnimeTypeRatingInfo(1L, "TV", "PG-13 - Teens 13 or older"),
+                new AnimeTypeRatingInfo(2L, "OVA", "Rx - Hentai")));
+
+        final var result = animeService.getTypeAndRatingByIds(List.of(1L, 2L));
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(1L).type()).isEqualTo("TV");
+        assertThat(result.get(2L).rating()).isEqualTo("Rx - Hentai");
+    }
+
+    @Test
+    void allTypesComeFromTheRepository() {
+        when(animeRepository.findDistinctTypes()).thenReturn(List.of("Movie", "OVA", "TV"));
+
+        assertThat(animeService.getAllTypes()).containsExactly("Movie", "OVA", "TV");
     }
 }

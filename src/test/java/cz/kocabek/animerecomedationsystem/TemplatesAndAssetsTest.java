@@ -87,6 +87,22 @@ class TemplatesAndAssetsTest {
     }
 
     @Test
+    void advancedOptionsGenreTypeAndContentFiltersAreRealFormInputs() throws IOException {
+        final var header = new ClassPathResource("templates/fragments/header.html").getContentAsString(StandardCharsets.UTF_8);
+        final var css = new ClassPathResource("static/assets/css/main.css").getContentAsString(StandardCharsets.UTF_8);
+
+        // the "WIP Coming soon" placeholder is gone, these are bound form fields now
+        assertThat(header).doesNotContain("WIP Coming soon").doesNotContain("coming-soon-features");
+        assertThat(css).doesNotContain("coming-soon-features");
+
+        assertThat(header).contains("th:field=\"*{genres}\"").contains("${availableGenres}");
+        assertThat(header).contains("th:field=\"*{types}\"").contains("${availableTypes}");
+        assertThat(header.split("th:field=\"\\*\\{excludedContent}\"", -1).length - 1)
+                .as("checkboxes bound to excludedContent").isEqualTo(2);
+        assertThat(header).contains("value=\"adult\"").contains("value=\"ecchi\"");
+    }
+
+    @Test
     void guestMenuOffersSignInAndSignUp() throws IOException {
         final var menu = new ClassPathResource("templates/fragments/menuContent.html").getContentAsString(StandardCharsets.UTF_8);
         final var guest = menu.substring(menu.indexOf("<!--guest menu-->"));
