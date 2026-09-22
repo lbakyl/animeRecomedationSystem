@@ -13,6 +13,7 @@ like. All times are CEST (UTC+2) as in `git log`, deployment times are given in 
 
 | Version | Released (live site) | Commits | What it is |
 |---|---|---|---|
+| [0.6.0](#060) | 2026-09-22 20:43 CEST (18:43 UTC) | 1 | Advanced options: real Genres/Type filters and Content Filters |
 | [0.5.0](#050) | 2026-09-21 23:15 CEST (21:15 UTC) | 1 | Recommendation cards: aligned AVG/MAL badges, wider meter, equal poster height |
 | [0.4.0](#040) | 2026-09-21 23:01 CEST (21:01 UTC) | 2 | Signing in is optional: the site opens in the app, menu has Sign In / Sign Up; release history |
 | [0.3.1](#031) | 2026-09-21 22:47 CEST (20:47 UTC) | 2 | Dark text in the search box |
@@ -20,8 +21,8 @@ like. All times are CEST (UTC+2) as in `git log`, deployment times are given in 
 | [0.2.0](#020) | 2026-09-21 17:55 CEST (15:55 UTC) | 4 | Favicon, static file caching, mobile menu fix, Thymeleaf warning |
 | [0.1.0](#010) | 2026-09-21 00:07 CEST (2026-09-20 22:07 UTC) | 3 | Search rewrite and production clean-up |
 
-15 commits (as of `46150f2`), 43 files changed (22 new, 21 modified, none deleted), +2179 / -66 lines, of which
-+830 / -55 in `src/main` and +808 in `src/test` (8 new test classes, 60 tests). The rest is documentation.
+16 commits (as of `f6f45ad`), 63 files changed (27 new, 36 modified, none deleted), +2582 / -142 lines, of which
++1028 / -130 in `src/main` and +1013 / -1 in `src/test` (11 new test classes, 80 tests). The rest is documentation.
 
 ## For the call: what to look at
 
@@ -38,20 +39,30 @@ like. All times are CEST (UTC+2) as in `git log`, deployment times are given in 
   (`AuthConfig.loginPage("/login")`). Failed sign-in goes to `/login?error`, sign-out to `/login?logout`.
   `AuthenticationController`, `SettingPageController` (after a password change) and the registration page point
   to `/login` now. Old links such as `/?error` do not show the sign-in page any more.
+- **`InputDTO` grew 3 more components: `genres`, `types`, `excludedContent`** (0.6.0), all `List<String>`, `null`
+  from an empty multi-select/no checkbox checked becomes `List.of()` in a compact constructor.
+  `RecommendationConfig` and every place that builds an `InputDTO` were adjusted. `AnimeOutDTO` grew `type` and
+  `rating`, filled in `RecommendationService.enrichedMapByDetails` next to `genres`, i.e. before filtering runs.
+  `ViewController` got one more dependency, `AnimeGenreService` (still `@AllArgsConstructor`), and two
+  `@ModelAttribute` methods that run for every request the controller handles, including `/search/suggest` and
+  `/remove_uiitem` (both results are `@Cacheable`, so this is a map lookup after the first request, not a query
+  on every keystroke).
 - **`application-prod.yml`** (0.1.0 and 0.2.0): `forward-headers-strategy: framework`, `Secure` + `SameSite=Lax`
   session cookie, no Hikari `DEBUG`, 30-day cache for static files and content-hash file names below `/assets/**`.
   Only the `prod` profile is affected.
-- **Templates / CSS:** `fragments/header.html` (search box attributes, new hook classes, hidden `animeId`),
-  `fragments/core.html` (favicon links, one more script), `fragments/menuContent.html` (guest menu),
-  `main.html`/`detail.html` (htmx script), `watchlist.html` (one attribute), `auth/registration.html` (one link),
-  `main.css` (a media-query block for the header, rules for the recommendation cards), `result.html` (the meter's
-  inline size removed, one class on two badges, one on their row), new `error.html` and
-  `fragments/suggestions.html`.
+- **Templates / CSS:** `fragments/header.html` (search box attributes, new hook classes, hidden `animeId`, the
+  advanced-options genre/type selects and content-filter checkboxes are real `th:field` inputs now instead of
+  static markup), `fragments/core.html` (favicon links, one more script), `fragments/menuContent.html` (guest
+  menu), `main.html`/`detail.html` (htmx script), `watchlist.html` (one attribute), `auth/registration.html`
+  (one link), `main.css` (a media-query block for the header, rules for the recommendation cards, the
+  "coming soon" placeholder style removed), `result.html` (the meter's inline size removed, one class on two
+  badges, one on their row), new `error.html` and `fragments/suggestions.html`.
 
 ### What users notice
 Search finds partial and differently punctuated titles and suggests while typing; the site opens without the
 sign-in page; the mobile menu works; pages load faster (cached files); friendly error pages; a favicon; dark
-text in the search box; tidy recommendation cards (equal posters, aligned badges, a meter the percentage fits).
+text in the search box; tidy recommendation cards (equal posters, aligned badges, a meter the percentage fits);
+the "Genres", "Type" and "Content Filters" advanced options actually do something now.
 
 ### Outside the repository (nothing of this is in the code)
 - The application runs on a small VPS (Fastcom) behind Cloudflare and nginx, with MariaDB 11.8 in Docker.
@@ -86,8 +97,59 @@ text in the search box; tidy recommendation cards (equal posters, aligned badges
    and the new meter width make no difference. A fix would be the breakpoints in `result.html`:
    `col-sm-6 col-md-4 col-lg-3` -> `col-sm-6 col-lg-4 col-xl-3` (2 cards per row on tablets, 3 on small
    desktops, 4 from 1200 px). It changes how many cards fit in a row, so it was not done without asking.
+10. **"Exclude Adult Content" and "Exclude Ecchi" (0.6.0) assume a data convention that is not written down
+    anywhere in the code**: adult content = `Anime.rating` starting with `"Rx"` (MyAnimeList's "Rx - Hentai"
+    tier), ecchi = the anime has the genre named exactly `"Ecchi"`. Both matched real data on the production
+    copy (see 0.6.0 below), but not perfectly: selecting the genre `Hentai` alone returns 50 anime (the display
+    cap; the true candidate pool is at least that many), and enabling "Exclude Adult Content" on top of that
+    still leaves 3, i.e. those 3 are tagged `Hentai` but their `rating` is something other than `"Rx"`. Is
+    `rating` reliable enough for this, or should "adult" also fall back to genre (`Hentai`, `Erotica`) the way
+    "ecchi" does?
 
 ---
+
+## [0.6.0]
+<a id="060"></a>
+
+**Released:** 2026-09-22 20:43 CEST (18:43 UTC). Image built from `f6f45ad`. 80 tests pass.
+
+### Advanced options: real Genres/Type filters and Content Filters
+The "Advanced Options" panel already had a "Genres" list, a "Type" list and two content-filter checkboxes,
+under a "WIP Coming soon" label. They were real `<select>`/`<input>` elements with names, but no `th:field`, so
+submitting the form silently dropped whatever was picked.
+
+- **`f6f45ad`** (2026-09-22 20:41, 20 files, +403 / -76) *Advanced options: real Genres/Type filters and Content
+  Filters*
+  - Added: **"Genres"** and **"Type"** now list the real values from the database (`GenreRepository`, a new
+    `AnimeRepository.findDistinctTypes()`) instead of 5 hardcoded genres and a fixed TV/Movie/OVA/ONA list, and
+    selecting one or more filters the recommendations the same way the existing "only same genres as input
+    anime" checkbox already did (`AnimePreprocessingService`). Multiple selections are OR'd within a list (any
+    selected genre matches); genres and type are two separate, ANDed filters.
+  - Added: **"Exclude Adult Content"** (checked by default, matching the existing markup) and **"Exclude
+    Ecchi"** now do something. Both post into one `excludedContent` list (`"adult"`, `"ecchi"`) rather than two
+    independent checkboxes, so a checkbox left unchecked does not need Thymeleaf's `_fieldName` hidden-input
+    convention to bind correctly to the `InputDTO` record (the existing `onlyInAnimeGenres` checkbox does need
+    it, and every test that posts to `/submit` already has to pass `_onlyInAnimeGenres=on` because of it).
+  - Changed: `AnimeOutDTO` carries `type` and `rating` now, fetched in one bulk query per recommendation run
+    (`AnimeService.getTypeAndRatingByIds`, alongside the existing bulk genre fetch) before the "Genres"/"Type"/
+    "Content Filters" predicates run in `AnimePreprocessingService`.
+  - Fixed along the way: some anime rows have `Type = ''` (empty string, not `NULL`) in the data, which showed
+    up as one nameless blank option in the "Type" list; `findDistinctTypes()` excludes it.
+  - `main.css`: the `.coming-soon-features` dashed-border placeholder style is gone, nothing uses it any more.
+  - Tests: `AnimePreprocessingServiceTest` (7, the 4 new filters and their combination with the existing one),
+    `AnimeGenreServiceTest`, `InputDTOTest` (the null-safety of the 3 new record components), one more assertion
+    in `TemplatesAndAssetsTest`, `AnimeServiceFormTest` (2 more).
+  - Not changed: the "Quick Presets" buttons and the min-rating/max-users sliders (untouched by this commit).
+
+**Verified:** on a staging copy of the production database. Unit tests use a synthetic 4-anime map (one match
+per filter, one with no genre/type/rating at all, to check nothing throws on missing data). On real data:
+searching "Naruto" with genre `Action` selected returned 50 anime, all tagged `ACTION`; adding type `TV`
+dropped titles such as "Mononoke Hime" and "Naruto Movie 1" (both Movies) from the list, clearing the type
+filter brought them back. Selecting genre `Ecchi` alone returned only `ECCHI`-tagged anime; turning on "Exclude
+Ecchi" **while genre `Ecchi` was still selected** correctly returned **zero** anime (a deliberate contradiction:
+require the genre and exclude it). Selecting genre `Hentai` returned anime with an `"Rx - Hentai"` rating;
+turning on "Exclude Adult Content" dropped that list from 50 (the display cap) to 3 (see question 10 above for
+what those 3 are). Checked the live app log after deploying: clean startup, no `ERROR`/`WARN` lines.
 
 ## [0.5.0]
 <a id="050"></a>
